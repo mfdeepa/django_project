@@ -22,7 +22,25 @@ class FakeStoreClient:
         return product_data
 
     def get_single_product(self, product_id: int) -> Optional[FakeStoreProductSerializer]:
-        pass
+        response = self.client.get(f"{"https://fakestoreapi.com"}/products/{product_id}")
+
+        if response.status_code != 200:
+            print("product not found")
+            return None
+        elif response.status_code == 200:
+            if not response.text.strip():  # Check if the response body is empty
+                print("Received empty response body.")
+            return None  # Handle as needed
+        try:
+            product_data = response.json()
+            return product_data
+        except ValueError as e:
+            print(f"Error parsing JSON: {str(e)}")
+            return None
+
+            # response.raise_for_status()
+            # product_data = response.json()
+            # return product_data
 
     def add_new_product(self, product: ProductSerializer) -> FakeStoreProductSerializer:
         pass

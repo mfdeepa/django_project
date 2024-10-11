@@ -2,6 +2,7 @@ from typing import Optional, List
 
 import httpx
 import injector
+from rest_framework.exceptions import ValidationError
 
 from productService.clients.fakeStoreClient.fakeStoreClient import FakeStoreClient
 from productService.models import Product, Category
@@ -43,7 +44,11 @@ class ProductServiceImpl(ProductService):
         return answer
 
     def get_single_product(self, product_id: int) -> Optional[Product]:
-        pass
+        fake_store_products = self.fake_store_client.get_single_product(product_id)
+        if fake_store_products is None:
+            raise ValidationError("product id is not valid")
+        answer = self.convert_fake_store_product_data_to_product(fake_store_products)
+        return answer
 
     def add_new_product(self, product: ProductSerializer) -> Product:
         pass
