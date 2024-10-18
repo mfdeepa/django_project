@@ -28,7 +28,7 @@ class ProductService(ABC):
         pass
 
     @abstractmethod
-    def get_limit_product_result(self, product_id: int) -> str:
+    def get_limit_product_result(self, limit: int, offset: int) -> str:
         pass
 
     @abstractmethod
@@ -37,8 +37,4 @@ class ProductService(ABC):
 
     @abstractmethod
     def get_product_by_sorting(self, product_id: int) -> str:
-        pass
-
-    @abstractmethod
-    def replace_product(self, product_id: int, product: Product) -> Product:
         pass

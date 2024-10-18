@@ -1,72 +1,77 @@
 from typing import Optional, List
 
-import httpx
-import injector
+from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
-from productService.clients.fakeStoreClient.fakeStoreClient import FakeStoreClient
-from productService.models import Product, Category
+from productService.models import Product
 from productService.seralizers.productSerializer import ProductSerializer
 from productService.services.product_service import ProductService
+from productService.util.mapper import convert_fake_store_product_data_to_product
 
 
 class ProductServiceImpl(ProductService):
-
-    @injector.inject
-    def __init__(self):
-        self.http_client = httpx.Client
-        self.fake_store_client = FakeStoreClient()
-
-    @injector.inject
-    def convert_fake_store_product_data_to_product(self, product_data: dict) -> Product:
-        category_name = product_data.get('category', 'Unknown')
-        category, created = Category.objects.get_or_create(name=category_name)
-
-        # Convert external API data to your Django model instance
-        product = Product.objects.create(
-            title=product_data['title'],
-            price=product_data['price'],
-            description=product_data.get('description', ''),
-            # description='description',
-            category=category,
-        )
-        return product
-
     def get_all_products(self) -> List[Product]:
-        # Get product data from the external API
-        fake_store_products = self.fake_store_client.get_all_products()
-
-        # Convert the data into Product instances
+        products = Product.objects.all()
         answer = []
-        for product_data in fake_store_products:
-            answer.append(self.convert_fake_store_product_data_to_product(product_data))
-
+        for product in products:
+            if isinstance(product, Product):
+                answer.append(product)
+            else:
+                answer.append(convert_fake_store_product_data_to_product(product_data=product))
         return answer
 
     def get_single_product(self, product_id: int) -> Optional[Product]:
-        fake_store_products = self.fake_store_client.get_single_product(product_id)
-        if fake_store_products is None:
-            raise ValidationError("product id is not valid")
-        answer = self.convert_fake_store_product_data_to_product(fake_store_products)
-        return answer
+        try:
+            product = Product.objects.get(pk=product_id)
+            return product
+        except Product.DoesNotExist:
+            raise Http404("Product does not exist")
 
-    def add_new_product(self, product: ProductSerializer) -> Product:
-        pass
+    def add_new_product(self, new_product) -> Product:
+        product_data = {
+            "title": new_product.get('title'),
+            "description": new_product.get('description'),
+            "price": new_product.get('price'),
+        }
 
-    def update_product(self, product_id: int, product: Product) -> Product:
-        pass
+        serialized = ProductSerializer(data=product_data)
+        if serialized.is_valid(raise_exception=True):
+            product = convert_fake_store_product_data_to_product(serialized.validated_data)
+            product.save()
+            return product
+        else:
+            raise ValidationError(serialized.errors)
+
+    def update_product(self, product_id: int, product_data: dict) -> Product:
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            raise Http404("Product does not exist")
+
+        serialized = ProductSerializer(instance=product, data=product_data, partial=True)
+        if serialized.is_valid(raise_exception=True):
+            product.title = product_data.get('title')
+            product.description = product_data.get('description')
+            product.price = product_data.get('price')
+            product.save()
+            return product
+        else:
+            raise ValidationError(serialized.errors)
 
     def delete_product(self, product_id: int) -> bool:
-        pass
+        try:
+            product = Product.objects.get(pk=product_id)
+            product.delete()
+            return True
+        except Product.DoesNotExist:
+            raise False
 
-    def get_limit_product_result(self, product_id: int) -> str:
-        pass
-
-    def update_product_partially(self, product_id: int) -> str:
+    def get_limit_product_result(self, limit: int, offset: int) -> str:
         pass
 
     def get_product_by_sorting(self, product_id: int) -> str:
         pass
 
-    def replace_product(self, product_id: int, product: Product) -> Product:
+    def update_product_partially(self, product_id: int) -> str:
+        # update product has a partially updated product function, so no need to create duplicate method.
         pass

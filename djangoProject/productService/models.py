@@ -13,8 +13,8 @@ class BaseModel(models.Model):
 
 
 class Category(BaseModel):
-    name = models.CharField(max_length=255,default=None)
-    description = models.TextField(null=False,blank=False)
+    name = models.CharField(max_length=255, default=None)
+    description = models.TextField(null=False, blank=False)
 
 
 class Product(BaseModel):
@@ -22,7 +22,7 @@ class Product(BaseModel):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField(blank=True, null=True)
     #image_url = models.ImageField(default='default.jpg', upload_to='images')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='products',null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
 
 
 class Rating(models.Model):
